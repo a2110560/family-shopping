@@ -3,7 +3,7 @@ import { Buffer } from 'node:buffer';
 
 export function makePhotoBackup(db, env, request = fetch) {
   const repository = env.FAMILY_SHOPPING_GITHUB_REPO;
-  const token = env.FAMILY_SHOPPING_GITHUB_TOKEN;
+  const token = env.FAMILY_SHOPPING_GITHUB_TOKEN?.trim();
   if (!repository && !token) return;
   if (!/^[\w.-]+\/[\w.-]+$/.test(repository || '') || !token) {
     throw new Error('請同時設定 FAMILY_SHOPPING_GITHUB_REPO 與 FAMILY_SHOPPING_GITHUB_TOKEN。');
@@ -39,31 +39,41 @@ export function makePhotoBackup(db, env, request = fetch) {
     const job = poll.get(repository, Date.now());
     if (!job) return;
     running = true;
+    let phase = 'repository';
+    let status;
     try {
       const info = await send();
+      status = info.status;
       if (!info.ok || (await info.json()).visibility !== 'private') {
         throw new Error('備份需要可存取的私有 GitHub 儲存庫。');
       }
       const path = `/contents/photos/${instance}/${job.photo_id}.jpg`;
       const data = Buffer.from(job.data);
       const hash = createHash('sha1').update(`blob ${data.length}\0`).update(data).digest('hex');
+      phase = 'photo lookup';
+      status = undefined;
       const existing = await send(path, { headers: { Accept: 'application/vnd.github.object+json' } });
+      status = existing.status;
       if (existing.ok) {
         if ((await existing.json()).sha !== hash) throw new Error('備份路徑已有不同內容。');
       } else if (existing.status === 404) {
+        phase = 'photo write';
+        status = undefined;
         const result = await send(path, {
           method: 'PUT', body: JSON.stringify({ message: 'Back up a shopping photo', content: data.toString('base64') })
         });
+        status = result.status;
         if (!result.ok) throw new Error(`GitHub 寫入失敗（HTTP ${result.status}）。`);
         await result.body?.cancel();
       } else {
         throw new Error(`GitHub 查詢失敗（HTTP ${existing.status}）。`);
       }
+      phase = 'record backup';
       uploaded.run(Date.now(), job.photo_id);
-    } catch {
+    } catch (error) {
       const seconds = Math.min(3600, 15 * 2 ** Math.min(job.attempts, 8));
       retry.run(Date.now() + seconds * 1000, job.photo_id);
-      console.warn(`照片備份稍後重試（照片編號 ${job.photo_id}）。`);
+      console.warn('照片備份稍後重試。', { photoId: job.photo_id, phase, status, errorType: error.name });
     } finally {
       running = false;
     }
@@ -80,3 +90,4 @@ export function startPhotoBackup(db, env, request = fetch) {
   timer.unref();
   return backup;
 }
+
