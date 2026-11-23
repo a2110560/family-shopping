@@ -1,0 +1,11 @@
+{
+  "name": "family-shopping",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.mjs",
+    "build:pages": "node scripts/build-pages.mjs"
+  }
+}

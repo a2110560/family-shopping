@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f2f4f7">
+  <meta name="description" content="家人共用的代購清單，登記需求、上傳照片和更新採買進度。">
+  <title>家人代購清單</title>
+  <link rel="icon" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <a class="skip" href="#main">跳到主要內容</a>
+  <header class="mobile-bar">
+    <a class="brand" href="./" data-action="home"><img src="./icon-192.png" alt="" width="28" height="28">家人代購</a>
+    <button class="quiet" id="menu-toggle" type="button" aria-controls="sidebar" aria-expanded="false">選單</button>
+  </header>
+  <div class="layout">
+    <aside id="sidebar" class="sidebar">
+      <a class="brand desktop-brand" href="./" data-action="home"><img src="./icon-192.png" alt="" width="34" height="34">家人代購</a>
+      <nav id="views" aria-label="清單檢視" hidden></nav>
+      <div class="utilities" id="utilities"></div>
+    </aside>
+    <main id="main" tabindex="-1">
+      <div id="notice" class="notice" role="status" hidden></div>
+      <div id="screen"><p class="loading">正在讀取清單…</p></div>
+      <noscript><p>請啟用 JavaScript 以使用共用清單。</p></noscript>
+    </main>
+  </div>
+  <dialog id="dialog"></dialog>
+  <div id="announce" class="sr-only" aria-live="polite"></div>
+</body>
+</html>
