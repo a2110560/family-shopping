@@ -20,7 +20,7 @@ export function makePhotoBackup(db, env, request = fetch) {
   };
   function send(path = '', attributes = {}) {
     return request(root + path, { ...attributes, headers: { ...headers, ...attributes.headers },
-      redirect: 'error', signal: AbortSignal.timeout(20_000) });
+      redirect: 'manual', signal: AbortSignal.timeout(20_000) });
   }
 
   const enqueue = db.prepare('INSERT INTO github_photo_backups (photo_id, repository) VALUES (?, ?)');
