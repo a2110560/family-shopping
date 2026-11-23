@@ -60,3 +60,18 @@ Pages 發布前端。後端請部署在可持續執行 Node.js 22.13 以上的 H
 3. 重啟後端。新商品照片和採買明細會先寫入 SQLite，再送到私有儲存庫的 `photos/<清單識別碼>/<照片編號>.jpg`。短暫失敗會重試，清單會顯示備份進度。
 
 備份檔會留在私有儲存庫，包含清單中後來刪掉的照片。Git 提交歷史也會保留已提交的照片。應讓該儲存庫持續保持私有。啟用前既有的照片留在原本的 SQLite 資料庫。
+
+## 使用 Cloudflare Workers 當後端
+
+這個專案也附有 `wrangler.toml`。Cloudflare Worker 用一個 SQLite 型 Durable Object 保存家人的清單、會話及照片。GitHub Pages 繼續發布前端。自動備份沿用私有的 `a2110560/family-shopping-photos`。Cloudflare Workers Free 支援這個儲存方式，實際用量受 [Cloudflare 免費額度](https://developers.cloudflare.com/durable-objects/platform/pricing/) 限制。
+
+1. 在 Cloudflare **Workers & Pages** 選擇從 GitHub 匯入 `a2110560/family-shopping`。Worker 名稱用 `family-shopping-api`，選預設分支，部署指令用 `npx wrangler@4 deploy`。也可從專案資料夾執行 `npx wrangler@4 login` 和 `npx wrangler@4 deploy`。
+2. 在 Worker 的 **Settings → Variables and Secrets** 新增機密 `FAMILY_SHOPPING_CODE`。在自己的終端執行下列指令產生新的家庭通行碼，保存後直接填進 Cloudflare。更換它會使之前的登入失效。家庭成員使用這個通行碼登入，無需 GitHub 或 Cloudflare 帳號。
+
+   ```powershell
+   node -e "console.log(require('node:crypto').randomBytes(24).toString('base64url'))"
+   ```
+
+3. 要啟用照片備份，在同一處新增機密 `FAMILY_SHOPPING_GITHUB_TOKEN`。這個權杖只限上面的私有照片庫，權限為 **Contents → Read and write**。兩個機密都設定在 Cloudflare Worker 執行階段。
+4. 開啟 Worker 的 `/health`。回傳 `ok: true` 表示通行碼已設定，`photoBackup: true` 表示已設定備份權杖。用測試照片確認頁面顯示「已備份至 GitHub」，可驗證實際寫入。
+5. 將 Worker 的 HTTPS 來源填入前端儲存庫的 Actions 變數 `PAGES_API_ORIGIN`，再執行 **Deploy GitHub Pages**。若前端改用自訂網域，請同步修改 `wrangler.toml` 的 `FAMILY_SHOPPING_PAGES_ORIGIN`。

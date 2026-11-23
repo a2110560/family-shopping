@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { Buffer } from 'node:buffer';
 
-export function startPhotoBackup(db, env, request = fetch) {
+export function makePhotoBackup(db, env, request = fetch) {
   const repository = env.FAMILY_SHOPPING_GITHUB_REPO;
   const token = env.FAMILY_SHOPPING_GITHUB_TOKEN;
   if (!repository && !token) return;
@@ -68,7 +69,14 @@ export function startPhotoBackup(db, env, request = fetch) {
     }
   }
 
-  const timer = setInterval(() => void sync(), 2500);
+  const due = db.prepare('SELECT MIN(retry_at) AS time FROM github_photo_backups WHERE repository = ? AND synced_at IS NULL');
+  return { enqueue: (id) => enqueue.run(id, repository), sync, nextDue: () => due.get(repository).time };
+}
+
+export function startPhotoBackup(db, env, request = fetch) {
+  const backup = makePhotoBackup(db, env, request);
+  if (!backup) return;
+  const timer = setInterval(() => void backup.sync(), 2500);
   timer.unref();
-  return { enqueue: (id) => enqueue.run(id, repository) };
+  return backup;
 }

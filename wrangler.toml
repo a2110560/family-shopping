@@ -1,0 +1,17 @@
+name = "family-shopping-api"
+main = "worker.mjs"
+compatibility_date = "2026-08-04"
+workers_dev = true
+preview_urls = false
+
+[vars]
+FAMILY_SHOPPING_PAGES_ORIGIN = "https://a2110560.github.io"
+FAMILY_SHOPPING_GITHUB_REPO = "a2110560/family-shopping-photos"
+
+[[durable_objects.bindings]]
+name = "SHOPPING_LIST"
+class_name = "ShoppingList"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ShoppingList"]

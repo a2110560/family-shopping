@@ -4,3 +4,6 @@ node_modules/
 dist-pages/
 .env
 .env.*
+.dev.vars
+.dev.vars.*
+.wrangler/
